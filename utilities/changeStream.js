@@ -1,8 +1,7 @@
 const ParserW = require('../db/models/parserModel');
 const DataLoad = require('../db/models/dataLoadModel');
 
-const formulas = [
-  {
+const formulas = [{
     name: 'IMSCSCFInitRegSuccRatio',
     counters: [
       'cscfAcceptedRegistrations.DEFAULT',
@@ -30,13 +29,10 @@ const formulas = [
   }
 ];
 
-const filter = [
-  {
+const filter = [{
     $match: {
-      $or: [
-        {
-          $and: [
-            {
+      $or: [{
+          $and: [{
               'fullDocument.measurement': {
                 $eq: 'cscfAcceptedRegistrations'
               }
@@ -49,8 +45,7 @@ const filter = [
           ]
         },
         {
-          $and: [
-            {
+          $and: [{
               'fullDocument.measurement': {
                 $eq: 'cscfRegistrationsFailure'
               }
@@ -108,7 +103,10 @@ ParserW.watch(filter, {
 
 function getFormulaName(doc) {
   const {
-    fullDocument: { measurement, moid }
+    fullDocument: {
+      measurement,
+      moid
+    }
   } = doc;
   const counter = measurement + '.' + moid;
   let fName = '';
@@ -123,37 +121,36 @@ function getFormulaName(doc) {
 
 async function saveInsertDataLoad(doc, fName) {
   const {
-    fullDocument: { day, measurement, moid, nedn, values },
-    documentKey: { _id }
+    fullDocument: {
+      day,
+      measurement,
+      moid,
+      nedn,
+      values
+    }
   } = doc;
   const compMeasurement = measurement + '.' + moid;
   const hour = Object.keys(values)[0];
   const minutes = Object.keys(values[hour])[0];
   const step = hour + '.' + minutes;
   const obj = {
-    documentKey: String(_id),
     formulaName: fName,
     day: day,
     measurement: compMeasurement,
-    data: [
-      {
-        time: step,
-        nedns: [nedn]
-      }
-    ]
+    data: [{
+      time: step,
+      nedns: [nedn]
+    }]
   };
   try {
-    const inDb = await DataLoad.findOne(
-      {
-        formulaName: fName,
-        day: day,
-        measurement: compMeasurement,
-        'data.time': step
-      },
-      {
-        _id: 1
-      }
-    );
+    const inDb = await DataLoad.findOne({
+      formulaName: fName,
+      day: day,
+      measurement: compMeasurement,
+      'data.time': step
+    }, {
+      _id: 1
+    });
     if (inDb) {
       return await updateData(inDb, nedn, step);
     } else {
@@ -172,34 +169,44 @@ function createNewData(obj) {
 
 function updateData(id, nedn, step) {
   console.log('//////////// updateData', id, nedn, step);
-  return DataLoad.findOneAndUpdate(
-    { _id: id, 'data.time': step },
-    { $push: { 'data.$.nedns': nedn } }
-  )
+  return DataLoad.findOneAndUpdate({
+      _id: id,
+      'data.time': step
+    }, {
+      $push: {
+        'data.$.nedns': nedn
+      }
+    })
     .then(val => val)
     .catch(err => err);
 }
 
 async function saveUpdateDataLoad(doc, fName) {
   const {
-    fullDocument: { day, measurement, moid, nedn },
-    updateDescription: { updatedFields },
-    documentKey: { _id }
+    fullDocument: {
+      day,
+      measurement,
+      moid,
+      nedn
+    },
+    updateDescription: {
+      updatedFields
+    },
+    documentKey: {
+      _id
+    }
   } = doc;
   const compMeasurement = measurement + '.' + moid;
   const pieces = Object.keys(updatedFields)[0].split('.');
   const step = pieces[1] + '.' + pieces[2];
-  const inDb = await DataLoad.findOne(
-    {
-      formulaName: fName,
-      day: day,
-      measurement: compMeasurement,
-      'data.time': step
-    },
-    {
-      _id: 1
-    }
-  );
+  const inDb = await DataLoad.findOne({
+    formulaName: fName,
+    day: day,
+    measurement: compMeasurement,
+    'data.time': step
+  }, {
+    _id: 1
+  });
   if (inDb) {
     console.log('//////////// inDb update', inDb);
     return await updateData(inDb, nedn, step);
@@ -213,11 +220,15 @@ async function saveUpdateDataLoad(doc, fName) {
 }
 
 function createNewObjInDataArr(obj, id) {
-  return DataLoad.findOneAndUpdate(
-    { documentKey: id },
-    { $push: { data: obj } },
-    { new: true }
-  )
+  return DataLoad.findOneAndUpdate({
+      documentKey: id
+    }, {
+      $push: {
+        data: obj
+      }
+    }, {
+      new: true
+    })
     .then(val => val)
     .catch(err => err);
 }
