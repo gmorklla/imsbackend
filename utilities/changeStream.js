@@ -1,6 +1,7 @@
 const ParserW = require('../db/models/parserModel');
 const DataLoad = require('../db/models/dataLoadModel');
 const Formula = require('../db/models/formulaModel');
+const Keys = require('../db/models/keysToWatchModel');
 const createDayData = require('./createDataForDay');
 
 const filter = [{
@@ -46,29 +47,52 @@ const filter = [{
     }
   }
 ];
-// ** Must be saved on db instead
-const keys = [];
 
 ParserW.watch(filter, {
   fullDocument: 'updateLookup'
 }).on('change', data => {
   if (data.operationType === 'insert') {
-    keys.push(String(data.documentKey._id));
     // ** Check counters that are used on several formulas option
-    getFormula(data)
+    const key = String(data.documentKey._id);
+    addKey(key)
+      .then(_ => getFormula(data))
       .then(formula => saveInsertDataLoad(data, formula))
       .then(_ => {})
       .catch(err => console.log('error saveInsert', err));
   }
   if (data.operationType === 'update') {
-    if (keys.includes(String(data.documentKey._id))) {
-      getFormula(data)
-        .then(formula => saveUpdateDataLoad(data, formula))
-        .then(_ => {})
-        .catch(err => console.log('error saveUpdate', err));
-    }
+    const key = String(data.documentKey._id);
+    getKeys()
+      .then(keys => {
+        const kArr = keys.length > 0 ? keys[0].list : [];
+        return kArr.includes(key) ? getFormula(data) : false;
+      })
+      .then(formula => formula ? saveUpdateDataLoad(data, formula) : false)
+      .then(_ => {})
+      .catch(err => console.log('Error:', err));
   }
 });
+
+async function getKeys() {
+  return await Keys.find({
+    _id: 'keys'
+  }, {
+    list: 1
+  });
+}
+
+async function addKey(key) {
+  return Keys.findOneAndUpdate({
+    _id: 'keys'
+  }, {
+    $push: {
+      list: key
+    }
+  }, {
+    new: true,
+    upsert: true
+  });
+}
 
 async function saveInsertDataLoad(doc, formula) {
   const {
