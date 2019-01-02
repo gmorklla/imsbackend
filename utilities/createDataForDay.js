@@ -1,15 +1,28 @@
 const DataLoad = require('../db/models/dataLoadModel');
 
-function createDayData() {
+function createDayData(date, formula) {
     const steps = ['0', '15', '30', '45'];
-    const day = [];
+    let day = {};
+    const cArr = formula.counters.map(val => {
+        return {
+            name: val,
+            nedn: []
+        }
+    });
     for (let i = 0; i < 24; i++) {
         steps.forEach(val => {
-            const step = `${String(i)}.${val}`;
-            day.push(step);
+            const step = `${String(i)}:${val}`;
+            const obj = {};
+            obj[step] = cArr;
+            day = Object.assign(day, obj);
         });
     }
-    console.log(day);
+    const obj = {
+        formulaName: formula.name,
+        day: date,
+        data: day
+    };
+    return DataLoad.create(obj);
 }
 
-createDayData();
+module.exports = createDayData;

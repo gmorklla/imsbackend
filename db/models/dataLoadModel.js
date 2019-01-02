@@ -11,25 +11,12 @@ const DataLoadSchema = new Schema({
     type: Date,
     required: true
   },
-  data: [{
-    time: {
-      type: String,
-      required: true
-    },
-    counters: [{
-      name: {
-        type: String,
-        required: true
-      },
-      nedn: []
-    }]
-  }]
+  data: {}
 });
 
 DataLoadSchema.index({
   day: -1,
-  formulaName: 1,
-  "data.time": 1
+  formulaName: 1
 }, {
   background: true,
   unique: true
