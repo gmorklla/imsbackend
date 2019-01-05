@@ -7,6 +7,10 @@ const DataLoadSchema = new Schema({
     type: String,
     required: true
   },
+  nedn: {
+    type: String,
+    required: true
+  },
   day: {
     type: Date,
     required: true
@@ -16,7 +20,8 @@ const DataLoadSchema = new Schema({
 
 DataLoadSchema.index({
   day: -1,
-  formulaName: 1
+  formulaName: 1,
+  nedn: 1
 }, {
   background: true,
   unique: true

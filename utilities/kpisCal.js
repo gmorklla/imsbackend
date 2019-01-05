@@ -17,7 +17,7 @@ function kpi1(data, time) {
         minute = time.split('.')[1];
         minute = String(Number(minute));
     }
-    const v1 = value(filter(data, 'cscfAcceptedRegistrations'), hour, minute);
+    const v1 = value(filter(data, 'cscfAcceptedRegistrations', 'DEFAULT'), hour, minute);
     const v2 = value(filter(data, 'cscfRegistrationsFailure', 'SIPResponseCode=400'), hour, minute);
     const v3 = value(filter(data, 'cscfRegistrationsFailure', 'SIPResponseCode=403'), hour, minute);
     const v4 = v1;
@@ -25,15 +25,8 @@ function kpi1(data, time) {
     const v6 = value(filter(data, 'cscfRegistrationsFailure', 'SIPResponseCode=401'), hour, minute);
     const result = 100 * (v1 + v2 + v3) / (v4 + v5 + v6);
     const obj = {
-        formula: '100 * (cscfAcceptedRegistrations + cscfRegistrationsFailure.400 + cscfRegistrationsFailure.403) / (cscfAcceptedRegistrations + cscfRegistrationsFailure.SUM - cscfRegistrationsFailure.401)',
-        value: result,
-        counters: {
-            'cscfAcceptedRegistrations': v1,
-            'cscfRegistrationsFailure.400': v2,
-            'cscfRegistrationsFailure.403': v3,
-            'cscfRegistrationsFailure.SUM': v5,
-            'cscfRegistrationsFailure.401': v6
-        }
+        name: 'IMSCSCFInitRegSuccRatio',
+        value: result
     };
     return obj;
 }

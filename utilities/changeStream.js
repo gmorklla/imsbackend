@@ -3,6 +3,7 @@ const DataLoad = require('../db/models/dataLoadModel');
 const Formula = require('../db/models/formulaModel');
 const Keys = require('../db/models/keysToWatchModel');
 const createDayData = require('./createDataForDay');
+const calculateProcess = require('./calculateKpi');
 
 const filter = [{
     $match: {
@@ -58,7 +59,7 @@ ParserW.watch(filter, {
       .then(_ => getFormula(data))
       .then(formula => saveInsertDataLoad(data, formula))
       .then(_ => {})
-      .catch(err => console.log('error saveInsert', err));
+      .catch(err => manageError('Error insert', err));
   }
   if (data.operationType === 'update') {
     const key = String(data.documentKey._id);
@@ -67,9 +68,9 @@ ParserW.watch(filter, {
         const kArr = keys.length > 0 ? keys[0].list : [];
         return kArr.includes(key) ? getFormula(data) : false;
       })
-      .then(formula => formula ? saveUpdateDataLoad(data, formula) : false)
+      .then(formula => (formula ? saveUpdateDataLoad(data, formula) : false))
       .then(_ => {})
-      .catch(err => console.log('Error:', err));
+      .catch(err => manageError('Error update', err));
   }
 });
 
@@ -109,15 +110,15 @@ async function saveInsertDataLoad(doc, formula) {
   const minutes = Object.keys(values[hour])[0];
   const step = hour + ':' + minutes;
   try {
-    const inDb = await findInDb(formula.name, day);
+    const inDb = await findInDb(formula.name, day, nedn);
     if (inDb) {
-      return await updateData(inDb, nedn, step, compMeasurement);
+      return await updateData(inDb, step, compMeasurement);
     } else {
-      const obj = await createDayData(day, formula);
-      return await updateData(obj._id, nedn, step, compMeasurement);
+      const obj = await createDayData(day, formula, nedn);
+      return await updateData(obj._id, step, compMeasurement);
     }
   } catch (error) {
-    console.log('Error on saveInsertDataLoad', error);
+    manageError('Error on saveInsertDataLoad', error);
   }
 }
 
@@ -137,19 +138,20 @@ async function saveUpdateDataLoad(doc, formula) {
   const pieces = Object.keys(updatedFields)[0].split('.');
   const step = pieces[1] + ':' + pieces[2];
   try {
-    const inDb = await findInDb(formula.name, day);
+    const inDb = await findInDb(formula.name, day, nedn);
     if (inDb) {
-      return await updateData(inDb, nedn, step, compMeasurement);
+      return await updateData(inDb, step, compMeasurement);
     }
   } catch (error) {
-    console.log('Error on saveUpdateDataLoad', error);
+    manageError('Error on saveUpdateDataLoad', error);
   }
 }
 
-function findInDb(name, day) {
+function findInDb(name, day, nedn) {
   return DataLoad.findOne({
     formulaName: name,
-    day: day
+    day: day,
+    nedn: nedn
   }, {
     _id: 1
   });
@@ -174,21 +176,44 @@ async function getFormula(doc) {
   return formulaObj;
 }
 
-function updateData(id, nedn, step, cName) {
+function updateData(id, step, cName) {
   const filterObj = {
     _id: id
   };
   const jTime = 'data.' + step;
   const kToFilter = jTime + '.name';
   filterObj[kToFilter] = cName;
-  const kToPush = jTime + '.$.nedn';
+  const kToPush = jTime + '.$.check';
   const objToPush = {};
-  objToPush[kToPush] = nedn;
-  return DataLoad.findOneAndUpdate(filterObj, {
-      $push: objToPush
+  objToPush[kToPush] = true;
+  const project = {
+    formulaName: 1,
+    day: 1,
+    nedn: 1
+  };
+  project[jTime] = 1;
+  return DataLoad.findOneAndUpdate(filterObj, objToPush, {
+      new: true
     })
-    .then(val => val)
-    .catch(err => err);
+    .select(project)
+    .then(updated => {
+      checkToCalculate(updated, step);
+      return true;
+    })
+    .catch(err => manageError('Error on update', err));
+}
+
+function checkToCalculate(updated, step) {
+  const toCheck = updated.data[step];
+  let checks = 0;
+  toCheck.forEach(obj => obj.check && checks++);
+  if (checks >= toCheck.length - 1) {
+    calculateProcess(updated);
+  }
+}
+
+function manageError(msg, error) {
+  console.log(msg, error);
 }
 
 module.exports = ParserW;

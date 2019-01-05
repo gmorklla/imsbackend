@@ -1,12 +1,12 @@
 const DataLoad = require('../db/models/dataLoadModel');
 
-function createDayData(date, formula) {
+function createDayData(date, formula, nedn) {
     const steps = ['0', '15', '30', '45'];
     let day = {};
     const cArr = formula.counters.map(val => {
         return {
             name: val,
-            nedn: []
+            check: false
         }
     });
     for (let i = 0; i < 24; i++) {
@@ -20,7 +20,8 @@ function createDayData(date, formula) {
     const obj = {
         formulaName: formula.name,
         day: date,
-        data: day
+        data: day,
+        nedn: nedn
     };
     return DataLoad.create(obj);
 }
