@@ -45,11 +45,28 @@ const saveValue = (obj) => {
     return Value.create(obj);
 }
 
+const calculate = (name, counters, step) => {
+    let result;
+    switch (name) {
+        case 'IMSCSCFInitRegSuccRatio':
+            result = kpi1(counters, step.replace(':', '.'));
+            break;
+        case 'IMSCSCFOrgSessSetupSuccRatio':
+            result = kpi2(counters, step.replace(':', '.'));
+            break;
+
+        default:
+            break;
+    }
+    return result;
+}
+
 const calculateProcess = (obj) => {
     const {
         data,
         day,
-        nedn
+        nedn,
+        formulaName
     } = obj;
     const kStep = Object.keys(data)[0];
     const counters = data[kStep]
@@ -58,7 +75,7 @@ const calculateProcess = (obj) => {
     // Call function to make query
     makeQuery(counters, day, nedn)
         .then(counters => {
-            const result = kpi1(counters, kStep.replace(':', '.'));
+            const result = calculate(formulaName, counters, kStep);
             result['date'] = day;
             const hours = Number(kStep.split(':')[0]);
             const minutes = Number(kStep.split(':')[1]);

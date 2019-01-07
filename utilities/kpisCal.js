@@ -59,7 +59,7 @@ function kpi2(data, time) {
     }
     const v1 = value(filter(data, 'scscfOriginatingInviteSuccessfulEstablishedNoAs', 'sum'), hour, minute);
     const v2 = value(filter(data, 'scscfOriginatingInviteSuccessfulEstablishedToAs', 'sum'), hour, minute);
-    const v3 = value(filter(data, 'scscfOriginatingInviteCancelledBeforeEarlyDialog'), hour, minute);
+    const v3 = value(filter(data, 'scscfOriginatingInviteCancelledBeforeEarlyDialog', 'DEFAULT'), hour, minute);
     const v4 = value(filter(data, 'scscfOriginatingInviteNoAsFailed', '403'), hour, minute);
     const v5 = value(filter(data, 'scscfOriginatingInviteToAsFailed', '403'), hour, minute);
     const v6 = value(filter(data, 'scscfOriginatingInviteNoAsFailed', '404'), hour, minute);
@@ -68,27 +68,12 @@ function kpi2(data, time) {
     const v9 = value(filter(data, 'scscfOriginatingInviteToAsFailed', '407'), hour, minute);
     const v10 = value(filter(data, 'scscfOriginatingInviteNoAsFailed', '484'), hour, minute);
     const v11 = value(filter(data, 'scscfOriginatingInviteToAsFailed', '484'), hour, minute);
-    const v12 = value(filter(data, 'scscfOriginatingInviteNoAsAttempts'), hour, minute);
-    const v13 = value(filter(data, 'cscfOriginatingInviteToAsAttempts'), hour, minute);
+    const v12 = value(filter(data, 'scscfOriginatingInviteNoAsAttempts', 'DEFAULT'), hour, minute);
+    const v13 = value(filter(data, 'cscfOriginatingInviteToAsAttempts', 'DEFAULT'), hour, minute);
     const result = 100 * (v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11) / (v12 + v13);
     const obj = {
-        formula: '100 * (scscfOriginatingInviteSuccessfulEstablishedNoAs.sum + scscfOriginatingInviteSuccessfulEstablishedToAs.sum + scscfOriginatingInviteCancelledBeforeEarlyDialog + scscfOriginatingInviteNoAsFailed.403 + scscfOriginatingInviteToAsFailed.403 + scscfOriginatingInviteNoAsFailed.404 + scscfOriginatingInviteToAsFailed.404 + scscfOriginatingInviteNoAsFailed.407 + scscfOriginatingInviteToAsFailed.407 + scscfOriginatingInviteNoAsFailed.484 + scscfOriginatingInviteToAsFailed.484) / (scscfOriginatingInviteNoAsAttempts + cscfOriginatingInviteToAsAttempts)',
-        value: result,
-        counters: {
-            'scscfOriginatingInviteSuccessfulEstablishedNoAs.sum': v1,
-            'scscfOriginatingInviteSuccessfulEstablishedToAs.sum': v2,
-            'scscfOriginatingInviteCancelledBeforeEarlyDialog': v3,
-            'scscfOriginatingInviteNoAsFailed.403': v4,
-            'scscfOriginatingInviteToAsFailed.403': v5,
-            'scscfOriginatingInviteNoAsFailed.404': v6,
-            'scscfOriginatingInviteToAsFailed.404': v7,
-            'scscfOriginatingInviteNoAsFailed.407': v8,
-            'scscfOriginatingInviteToAsFailed.407': v9,
-            'scscfOriginatingInviteNoAsFailed.484': v10,
-            'scscfOriginatingInviteToAsFailed.484': v11,
-            'scscfOriginatingInviteNoAsAttempts': v12,
-            'cscfOriginatingInviteToAsAttempts': v13
-        }
+        name: 'IMSCSCFOrgSessSetupSuccRatio',
+        value: result
     };
     return obj;
 }

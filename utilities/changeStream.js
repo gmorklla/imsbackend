@@ -5,6 +5,7 @@ const Keys = require('../db/models/keysToWatchModel');
 const createDayData = require('./createDataForDay');
 const calculateProcess = require('./calculateKpi');
 
+// Filter to use on change stream watch
 const filter = [{
     $match: {
       $or: [{
@@ -37,6 +38,97 @@ const filter = [{
               }
             }
           ]
+        },
+        {
+          $and: [{
+              'fullDocument.measurement': {
+                $eq: 'scscfOriginatingInviteSuccessfulEstablishedNoAs'
+              }
+            },
+            {
+              'fullDocument.moid': {
+                $eq: 'sum'
+              }
+            }
+          ]
+        },
+        {
+          $and: [{
+              'fullDocument.measurement': {
+                $eq: 'scscfOriginatingInviteSuccessfulEstablishedToAs'
+              }
+            },
+            {
+              'fullDocument.moid': {
+                $eq: 'sum'
+              }
+            }
+          ]
+        },
+        {
+          $and: [{
+              'fullDocument.measurement': {
+                $eq: 'scscfOriginatingInviteCancelledBeforeEarlyDialog'
+              }
+            },
+            {
+              'fullDocument.moid': {
+                $eq: 'DEFAULT'
+              }
+            }
+          ]
+        },
+        {
+          $and: [{
+              'fullDocument.measurement': {
+                $eq: 'scscfOriginatingInviteNoAsFailed'
+              }
+            },
+            {
+              'fullDocument.moid': {
+                $in: ['403', '404', '407', '484']
+              }
+            }
+          ]
+        },
+        {
+          $and: [{
+              'fullDocument.measurement': {
+                $eq: 'scscfOriginatingInviteToAsFailed'
+              }
+            },
+            {
+              'fullDocument.moid': {
+                $in: ['403', '404', '407', '484']
+              }
+            }
+          ]
+        },
+        {
+          $and: [{
+              'fullDocument.measurement': {
+                $eq: 'scscfOriginatingInviteNoAsAttempts'
+              }
+            },
+            {
+              'fullDocument.moid': {
+                $eq: 'DEFAULT'
+              }
+            }
+          ]
+        },
+        {
+          $and: [{
+              'fullDocument.measurement': {
+                $eq: 'cscfOriginatingInviteToAsAttempts'
+              }
+            },
+            {
+              'fullDocument.moid': {
+                $eq: 'DEFAULT'
+              }
+            }
+          ]
         }
       ]
     }
@@ -49,18 +141,23 @@ const filter = [{
   }
 ];
 
+// Change stream watch method to look for the inserts and update
+// of filtered db operations
 ParserW.watch(filter, {
   fullDocument: 'updateLookup'
 }).on('change', data => {
+  // To look up for inserts
   if (data.operationType === 'insert') {
     // ** Check counters that are used on several formulas option
     const key = String(data.documentKey._id);
+    // Call method to save keys on db
     addKey(key)
       .then(_ => getFormula(data))
       .then(formula => saveInsertDataLoad(data, formula))
       .then(_ => {})
       .catch(err => manageError('Error insert', err));
   }
+  // To look up for updates
   if (data.operationType === 'update') {
     const key = String(data.documentKey._id);
     getKeys()
@@ -82,6 +179,7 @@ async function getKeys() {
   });
 }
 
+// Save keys of documents to check only those on db updates operations
 async function addKey(key) {
   return Keys.findOneAndUpdate({
     _id: 'keys'
@@ -118,7 +216,12 @@ async function saveInsertDataLoad(doc, formula) {
       return await updateData(obj._id, step, compMeasurement);
     }
   } catch (error) {
-    manageError('Error on saveInsertDataLoad', error);
+    if (error.code === 11000) {
+      const inDb = await findInDb(formula.name, day, nedn);
+      return await updateData(inDb, step, compMeasurement);
+    } else {
+      manageError('Error on saveInsertDataLoad', error);
+    }
   }
 }
 
@@ -207,8 +310,16 @@ function checkToCalculate(updated, step) {
   const toCheck = updated.data[step];
   let checks = 0;
   toCheck.forEach(obj => obj.check && checks++);
-  if (checks >= toCheck.length - 1) {
-    calculateProcess(updated);
+  switch (updated.formulaName) {
+    case 'IMSCSCFInitRegSuccRatio':
+      checks >= toCheck.length - 1 && calculateProcess(updated);
+      break;
+    case 'IMSCSCFOrgSessSetupSuccRatio':
+      checks >= toCheck.length - 5 && calculateProcess(updated);
+      break;
+
+    default:
+      break;
   }
 }
 
