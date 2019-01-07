@@ -12,6 +12,7 @@ const fCreateRouter = require('./routes/formulaCreate');
 const formulasRouter = require('./routes/formulas');
 const dataloadRouter = require('./routes/dataload');
 const lastdataloadRouter = require('./routes/lastdataload');
+const subscribeRouter = require('./routes/subscribe');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/formula/create', fCreateRouter);
 app.use('/formulas', formulasRouter);
 app.use('/dataload', dataloadRouter);
 app.use('/lastdataload', lastdataloadRouter);
+app.use('/subscribe', subscribeRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

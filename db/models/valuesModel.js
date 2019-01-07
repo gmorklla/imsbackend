@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const Subscribe = require('./subscribeModel');
+const {
+    emitNValue
+} = require('../../sockets/base');
 
 // Value Schema
 const ValueSchema = new Schema({
@@ -28,6 +32,22 @@ ValueSchema.index({
 }, {
     background: true,
     unique: true
+});
+
+ValueSchema.post('save', function (doc, next) {
+    // console.log('%s has been saved', doc);
+    Subscribe.find({})
+        .then(subs => {
+            let inDb = null;
+            subs.forEach(sub => {
+                if (sub.name === doc.name && sub.nedn === doc.nedn) {
+                    inDb = sub;
+                }
+            });
+            inDb && emitNValue(doc);
+            next();
+        })
+        .catch(err => console.log('Error', err));
 });
 
 // Value model

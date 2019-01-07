@@ -41,9 +41,7 @@ const getDateForQuery = (range) => {
     return date;
 }
 
-const saveValue = (obj) => {
-    return Value.create(obj);
-}
+const saveValue = (obj) => Value.create(obj);
 
 const calculate = (name, counters, step) => {
     let result;
@@ -83,7 +81,7 @@ const calculateProcess = (obj) => {
             result['nedn'] = nedn;
             return saveValue(result);
         })
-        .then(val => console.log('Value created', val))
+        .then(val => {})
         .catch(error => console.log(error));
 }
 
