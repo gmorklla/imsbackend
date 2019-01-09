@@ -81,7 +81,7 @@ const calculateProcess = (obj) => {
             result['nedn'] = nedn;
             return saveValue(result);
         })
-        .then(val => {})
+        .then(val => console.log('kpi', val))
         .catch(error => console.log(error));
 }
 

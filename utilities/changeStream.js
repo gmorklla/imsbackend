@@ -7,6 +7,8 @@ const calculateProcess = require('./calculateKpi');
 // Filter to use on change stream watch
 const filter = require('./cStreamFilter');
 
+const connection = require('../db/connection').connect();
+
 // Change stream watch method to look for the inserts and update
 // of filtered db operations
 ParserW.watch(filter, {
@@ -193,4 +195,4 @@ function manageError(msg, error) {
   console.log(msg, error);
 }
 
-module.exports = ParserW;
+// module.exports = ParserW;

@@ -2,8 +2,16 @@ const express = require('express');
 const router = express.Router();
 const Subscribe = require('../db/models/subscribeModel');
 
+router.all('/*', function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    res.header("Access-Control-Allow-Headers", "Content-Type, responseType, Content-Disposition");
+    next();
+});
+
 // Get subscribe
 router.get('/', (req, res, next) => {
+    console.log('subs route', req.query);
     // Get queries
     const {
         formula,
