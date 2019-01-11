@@ -1,25 +1,26 @@
 const events = require('events');
 const emitter = new events.EventEmitter();
 
-function set(io) {
-  io.on('connection', function (socket) {
-    console.log('a user connected');
-    socket.on('test', data => {
-      console.log('test', data);
-    });
-  });
+const set = (io) => {
+  // setInterval(() => {
+  //   const val = Math.floor(Math.random() * 100 + 1);
+  //   console.log('emit val', val);
+  //   io.emit('IMSCSCFInitRegSuccRatioDC=ims.mnc020.mcc334.3gppnetwork.org,g3SubNetwork=Mexico,g3ManagedElement=R5TEPECSCF01', {
+  //     value: val
+  //   });
+  // }, 60000);
   emitter.on('nValue', val => {
-    console.log('emitter', val);
-    const key = val.name + val.nedn;
+    const key = `${val.name}${val.nedn}`;
     io.emit(key, val);
+    console.log('emitter io //////////', val);
   });
 }
 
-function emitNValue(val) {
-  emitter.emit('nValue', val);
-}
+const emitValue = (doc) => {
+  emitter.emit('nValue', doc);
+};
 
 module.exports = {
   set: set,
-  emitNValue: emitNValue
+  emitValue: emitValue
 };
